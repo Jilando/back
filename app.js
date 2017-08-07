@@ -12,7 +12,7 @@ var LocalStrategy = require('passport-local');
 var util = require('util');
 var flash = require('connect-flash');
 var bcrypt = require('bcrypt');
-// var FacebookStrategy = require('passport-facebook');
+var FacebookStrategy = require('passport-facebook');
 
 var models = require('./models');
 var User = models.User;
@@ -90,6 +90,19 @@ passport.use(new LocalStrategy(function(username, password, done) {
       done(null, user);
       return;
     });
+  });
+}));
+
+passport.use(new FacebookStrategy({
+  clientID:process.env.FACEBOOK_APP_ID,
+  clientSecret: process.env.FACEBOOK_APP_SECRET,
+  callbackURL: 'http://localhost:3000/fb/login/callback'
+},
+function(accessToken, refreshToken, profile, done){
+  done(null, {
+    token: accessToken,
+    name: profile.displayName,
+    id: profile.id
   });
 }));
 

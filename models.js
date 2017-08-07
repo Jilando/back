@@ -12,8 +12,13 @@ var userSchema = mongoose.Schema({
   password: {
     type: String,
     required: true
-  }
+  },
+  imageUrl: String
 });
+
+var projectSchema = mongoose.Schema({
+
+})
 
 module.exports = {
   User: mongoose.model('User', userSchema)

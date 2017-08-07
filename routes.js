@@ -10,76 +10,62 @@ var multerS3 = require('multer-s3');
 var aws = new require('aws-sdk');
 var s3 = new aws.S3();
 
-var envvar = require('envvar');
-var moment = require('moment');
-var plaid = require('plaid');
-var APP_PORT = envvar.number('APP_PORT', 8000);
-var PLAID_CLIENT_ID = envvar.string('PLAID_CLIENT_ID');
-var PLAID_SECRET = envvar.string('PLAID_SECRET');
-var PLAID_PUBLIC_KEY = envvar.string('PLAID_PUBLIC_KEY');
-var PLAID_ENV = envvar.string('PLAID_ENV', 'sandbox');
-var ACCESS_TOKEN = null;
-var PUBLIC_TOKEN = null;
-var ITEM_ID = null;
-var client = new plaid.Client(
-  PLAID_CLIENT_ID,
-  PLAID_SECRET,
-  PLAID_PUBLIC_KEY,
-  plaid.environments[PLAID_ENV]
-);
+aws.config.update({
+    secretAccessKey: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+    accessKeyId: 'XXXXXXXXXXXXXXX',
+    region: 'us-east-1'
+});
 
+// var upload = multer({
+//     storage: multerS3({
+//         s3: s3,
+//         bucket: 'bucket-name',
+//         key: function (req, file, cb) {
+//             console.log(file);
+//             cb(null, file.originalname); //use Date.now() for unique file keys
+//         }
+//     })
+// });
+
+var upload = multer();
 
 module.exports = function (passport) {
   var router = express.Router();
 
-  /* Authentication routes */
-  router.get('/user', function(req, res) {
-    res.json({
-      PLAID_PUBLIC_KEY: PLAID_PUBLIC_KEY,
-      PLAID_ENV: PLAID_ENV
-    });
-  });
+  router.post('/:username/userImage/upload', upload.single('image'), function (req, res, next) {
+    var uniqueKey = req.params.user + Date.now().toString();
 
-  router.post('/get_access_token', function(req, res) {
-    PUBLIC_TOKEN = req.body.public_token;
-    client.exchangePublicToken(PUBLIC_TOKEN, function(error, tokenResponse) {
-      if (error !== null) {
-        var msg = 'Could not exchange public_token!';
-        console.log(msg + '\n' + error);
-        return res.json({
-          error: msg
+    var params = {
+      Body: req.file,
+      Bucket: 'horizons-plug',
+      Key: uniqueKey
+    };
+
+    s3.putObject(params, function(err, data) {
+      if (err) {
+        console.log(err, err.stack); // an error occurred
+      }
+      else {
+        User.findOne({ 'username': req.params.user }, function (err, user) {
+          if (err) {
+            console.log("Error", err);
+          }
+          else {
+            user.imageUrl = 'https://s3.us-east-2.amazonaws.com/horizons-plug/' + uniqueKey;
+            user.save();
+          }
         });
       }
-      ACCESS_TOKEN = tokenResponse.access_token;
-      ITEM_ID = tokenResponse.item_id;
-      console.log('Access Token: ' + ACCESS_TOKEN);
-      console.log('Item ID: ' + ITEM_ID);
-      return res.json({
-        'error': false
-      });
     });
   });
 
-  router.get('/accounts', function(req, res) {
-    // Retrieve high-level account information and account and routing numbers
-    // for each account associated with the Item.
-    client.getAuth(ACCESS_TOKEN, function(error, authResponse) {
-      if (error !== null) {
-        var msg = 'Unable to pull accounts from the Plaid API.';
-        console.log(msg + '\n' + error);
-        return res.json({
-          error: msg
-        });
-      }
 
-      console.log(authResponse.accounts);
-      return res.json({
-        error: false,
-        accounts: authResponse.accounts,
-        numbers: authResponse.numbers,
-      });
-    });
-  });
+  router.get('/fb/login', passport.authenticate('facebook'));
+
+  router.get('/fb/login/callback', passport.authenticate('facebook', {
+    successRedirect: '/login/success',
+    failureRedirect: '/login/failure'
+  }));
 
   router.get('/login/failure', function(req, res) {
     res.status(401).json({
