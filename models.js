@@ -18,11 +18,12 @@ var userSchema = mongoose.Schema({
   },
   projects: {
     type: Object,
-    required: true
   },
   socailMediaHandles: {
     type: Object,
-    required: true
+  },
+  contributions: {
+    type: Object,
   }
 });
 
@@ -35,30 +36,28 @@ var projectSchema = mongoose.Schema({
   name: {
     type: String,
     required: true,
+    unique: true
   },
   description: {
     type: String,
-    required: true,
   },
-  collaborators: {
+  imageUrl: {
+    type: String,
+  },
+  contributors: {
     type: Object,
-    required: true,
   },
   startDate: {
     type: String,
-    required: true,
   },
   endDate: {
     type: String,
-    required: true,
   },
   category: {
     type: String,
-    required: true,
   },
   location: {
     type: String,
-    required: true,
   },
 });
 
