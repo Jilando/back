@@ -6,6 +6,7 @@ var models = require('./models');
 var User = models.User;
 var Project = models.Project;
 var Event = models.Event;
+var Channel = models.Channel;
 var _ = require('underscore');
 var multer = require('multer');
 var multerS3 = require('multer-s3');
@@ -126,7 +127,47 @@ module.exports = function (passport) {
       endDate: req.body.endDate,
       category: req.body.category,
       location: req.body.location,
-    })
+    });
+    project.save(function(err, saved) {
+      if(err) {
+        console.log("Error", err);
+      }
+      else {
+        Channel.findOne({ 'category': req.body.name }, function (err, channel) {
+          if(err) {
+            console.log("Error", err);
+          }
+          else {
+            if(!channel.projects) {
+              channel.projects = [];
+            }
+            channel.projects.push(saved);
+          }
+        })
+      }
+    });
+  });
+
+  router.get('/channel/list', function(req, res) {
+    Channel.find({}, function(err, channels) {
+      if(err) {
+        console.log("Error", err);
+      }
+      else {
+        res.send(channels);
+      }
+    });
+  });
+
+  router.get('/channel/:channel_category', function(req, res) {
+    Channel.findOne({ 'category': req.params.channel_category }, function(err, channel) {
+      if(err) {
+        console.log("Error", err);
+      }
+      else {
+        res.send(channel);
+      }
+    });
   });
 
   router.post('user/:username/socailMediaHandles/instagram', function(req, res) {

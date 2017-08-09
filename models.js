@@ -73,8 +73,25 @@ var eventSchema = mongoose.Schema({
   }
 });
 
+var channelSchema = mongoose.Schema({
+  category: {
+    type: String,
+    unqiue: true
+  },
+  imageUrl: {
+    type: String,
+  },
+  followers: {
+    type: Object,
+  },
+  projects: {
+    type: Object,
+  }
+});
+
 module.exports = {
   User: mongoose.model('User', userSchema),
   Project: mongoose.model('Project', projectSchema),
-  Event: mongoose.model('Event', eventSchema)
+  Event: mongoose.model('Event', eventSchema),
+  Channel: mongoose.model('Channel', channelSchema),
 };
