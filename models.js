@@ -13,13 +13,69 @@ var userSchema = mongoose.Schema({
     type: String,
     required: true
   },
-  imageUrl: String
+  imageUrl: {
+    type: String,
+  },
+  projects: {
+    type: Object,
+    required: true
+  },
+  socailMediaHandles: {
+    type: Object,
+    required: true
+  }
 });
 
 var projectSchema = mongoose.Schema({
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  name: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  collaborators: {
+    type: Object,
+    required: true,
+  },
+  startDate: {
+    type: String,
+    required: true,
+  },
+  endDate: {
+    type: String,
+    required: true,
+  },
+  category: {
+    type: String,
+    required: true,
+  },
+  location: {
+    type: String,
+    required: true,
+  },
+});
 
-})
+var eventSchema = mongoose.Schema({
+  project: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Project',
+    required: true,
+  },
+  change: {
+    type: Object,
+    required: true,
+  }
+});
 
 module.exports = {
-  User: mongoose.model('User', userSchema)
+  User: mongoose.model('User', userSchema),
+  Project: mongoose.model('Project', projectSchema),
+  Event: mongoose.model('Event', eventSchema)
 };
