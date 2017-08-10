@@ -24,6 +24,9 @@ var userSchema = mongoose.Schema({
   },
   contributions: {
     type: Object,
+  },
+  viewed: {
+    type: Object,
   }
 });
 

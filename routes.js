@@ -46,13 +46,64 @@ module.exports = function (passport) {
     });
   });
 
+  router.get('/overview', function(req, res) {
+    User.find({ 'username': req.user.username}, function(err, user) {
+      if (err) {
+        console.log("Error", err);
+      }
+      else {
+          const visited = user.visited;
+          const categories = [];
+          const obj = {};
+          const percentage = {};
+          for(let i = 0 ; i < visited.length; i++) {
+            const key = visited[i].category;
+            obj[key] = 0;
+            percentage[key] = 0;
+          }
+          for(let i = 0 ; i < visited.length; i++) {
+            const key = visited[i].category;
+            obj[key]++;
+          }
+          for(let i = 0 ; i < visited.length; i++) {
+            const key = visited[i].category;
+            percentage[key] = obj[key]/visited.length;
+          }
+          res.json(percentage);
+      }
+    });
+  });
+
+  router.get('user/:username/profile', function(req, res) {
+    User.find({ 'username': req.user.username}, function(err, user) {
+      if (err) {
+        console.log("Error", err);
+      }
+      else {
+          res.send(user);
+      }
+    });
+  });
+
   router.get('project/:name', function(req, res) {
     Project.findById(req.query.id, function(err, project) {
       if (err) {
         console.log("Error", err);
       }
       else {
-        res.send(project);
+        User.findOne({ 'username': req.user.username}, function(err, user) {
+          if (err) {
+            console.log("Error", err);
+          }
+          else {
+            if(!user.visited) {
+              user.visited = [];
+            }
+            user.visited.push(project);
+            res.send(project);
+          }
+        });
+
       }
     })
   });
@@ -77,7 +128,7 @@ module.exports = function (passport) {
           }
           else {
             project.imageUrl = 'https://s3.us-east-2.amazonaws.com/horizons-plug/' + uniqueKey;
-            project.save();
+            project.save(function);
           }
         });
       }
@@ -154,7 +205,35 @@ module.exports = function (passport) {
         console.log("Error", err);
       }
       else {
-        res.send(channels);
+        User.findOne({ 'username': req.user.username}, function(err, user) {
+          if (err) {
+            console.log("Error", err);
+          }
+          else {
+            const obj = {
+              following: [],
+              popular: [],
+              explore: [],
+            };
+            for(let i = 0; i < channels.length; i++) {
+              const followers = channels[i].followers;
+              for(let j = 0; j < followers.length; j++) {
+                if(followers[i].username === req.user.usermame) {
+                  obj.following.push(channels[i]);
+                }
+                else {
+                  obj.explore.push(channels[i]);
+                }
+              }
+            }
+            obj.popular = channels;
+            obj.popular.sort(function(a, b) {
+              return b.followers.length - a.followers.length;
+            });
+            res.json(obj);
+          }
+        })
+
       }
     });
   });
