@@ -128,7 +128,7 @@ module.exports = function (passport) {
           }
           else {
             project.imageUrl = 'https://s3.us-east-2.amazonaws.com/horizons-plug/' + uniqueKey;
-            project.save(function);
+            project.save();
           }
         });
       }
@@ -221,7 +221,7 @@ module.exports = function (passport) {
                 if(followers[i].username === req.user.usermame) {
                   obj.following.push(channels[i]);
                 }
-                else {
+                else if(j === followers.length - 1){
                   obj.explore.push(channels[i]);
                 }
               }
