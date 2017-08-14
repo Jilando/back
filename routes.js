@@ -170,6 +170,7 @@ module.exports = function (passport) {
   });
 
   router.get('/projects', function(req, res) {
+    console.log("Projects route", req.user);
     User.findOne({ 'username': req.user.username}, function(err, user) {
       if(err) {
         console.log("Error", err);
@@ -177,7 +178,7 @@ module.exports = function (passport) {
       else {
         if(user) {
           res.json({
-            projects: user.projects
+            projects: user.projects || []
           })
         }
       }
