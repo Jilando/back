@@ -167,17 +167,32 @@ module.exports = function (passport) {
         });
       }
     });
-  })
+  });
+
+  router.get('/projects', function(req, res) {
+    User.findOne({ 'username': req.user.username}, function(err, user) {
+      if(err) {
+        console.log("Error", err);
+      }
+      else {
+        if(user) {
+          res.json({
+            projects: user.projects
+          })
+        }
+      }
+    });
+  });
 
   router.post('project/new', function(req, res) {
     var project = new Project({
-      owner: req.body.user,
-      name: req.body.name,
-      description: req.body.description,
-      startDate: req.body.startDate,
-      endDate: req.body.endDate,
-      category: req.body.category,
-      location: req.body.location,
+      owner: req.user,
+      name: req.body.name || 'Name',
+      description: req.body.description || 'Description',
+      startDate: req.body.startDate || 'startDate',
+      endDate: req.body.endDate || 'endDate',
+      category: req.body.category || 'category',
+      location: req.body.location || 'location',
     });
     project.save(function(err, saved) {
       if(err) {
@@ -193,6 +208,22 @@ module.exports = function (passport) {
               channel.projects = [];
             }
             channel.projects.push(saved);
+            User.findOne({ 'username': req.user.username}, function(err, user) {
+              if(err) {
+                console.log("Error", err);
+              }
+              else {
+                if(user) {
+                  if(!user.projects) {
+                    user.projects = [];
+                  }
+                  user.projects.push(project);
+                  res.json({
+                    success: true
+                  })
+                }
+              }
+            });
           }
         })
       }
