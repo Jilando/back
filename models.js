@@ -16,9 +16,10 @@ var userSchema = mongoose.Schema({
   imageUrl: {
     type: String,
   },
-  projects: {
-    type: Object,
-  },
+  // projects: {
+  //   type: Object,
+  // },
+  projects: [],
   socailMediaHandles: {
     type: Object,
   },

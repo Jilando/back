@@ -35,6 +35,76 @@ var upload = multer();
 module.exports = function (passport) {
   var router = express.Router();
 
+  router.get('/fb/login', passport.authenticate('facebook'));
+
+  router.get('/fb/login/callback', passport.authenticate('facebook', {
+    successRedirect: '/login/success',
+    failureRedirect: '/login/failure'
+  }));
+
+  router.get('/login/failure', function(req, res) {
+    res.status(401).json({
+      success: false,
+      error: req.flash('error')[0]
+    });
+  });
+
+  router.post('/login', passport.authenticate('local', {
+    successRedirect: '/login/success',
+    failureRedirect: '/login/failure',
+    failureFlash: true
+  }));
+
+  router.post('/register', function(req, res, next) {
+    var params = _.pick(req.body, ['username', 'password']);
+    bcrypt.genSalt(10, function(err, salt) {
+      bcrypt.hash(params.password, salt, function(err, hash) {
+        // Store hash in your password DB.
+        params.password = hash;
+        models.User.create(params, function(err, user) {
+          if (err) {
+            res.status(400).json({
+              success: false,
+              error: err.message
+            });
+          } else {
+            res.json({
+              success: true,
+              user: user
+            });
+          }
+        });
+      });
+    });
+  });
+
+  // Beyond this point the user must be logged in
+  router.use(function(req, res, next) {
+    if (!req.isAuthenticated()) {
+      res.status(401).json({
+        success: false,
+        error: 'not authenticated'
+      });
+    } else {
+      next();
+    }
+  });
+  router.get('/logout', function(req, res) {
+    req.logout();
+    res.json({
+      success: true,
+      message: 'logged out.'
+    });
+  });
+
+  router.get('/login/success', function(req, res) {
+    var user = _.pick(req.user, 'username', '_id');
+    res.json({
+      success: true,
+      user: user
+    });
+  });
+
   router.get('/events', function(req, res) {
     Event.find({}, function(err, events) {
       if (err) {
@@ -177,6 +247,7 @@ module.exports = function (passport) {
       }
       else {
         if(user) {
+          console.log("In projects route", user.projects);
           res.json({
             projects: user.projects || []
           })
@@ -185,7 +256,9 @@ module.exports = function (passport) {
     });
   });
 
-  router.post('project/new', function(req, res) {
+  router.post('/project/new', function(req, res) {
+    console.log('hit');
+    var globalProjectSaved = {};
     var project = new Project({
       owner: req.user,
       name: req.body.name || 'Name',
@@ -194,58 +267,48 @@ module.exports = function (passport) {
       endDate: req.body.endDate || 'endDate',
       category: req.body.category || 'ART',
       location: req.body.location || 'location',
-    });
-    project.save(function(err, saved) {
-      if(err) {
-        console.log("Error", err);
+    })
+    project.save()
+    .then(projectSaved => {
+      console.log("Project saved");
+      globalProjectSaved = projectSaved;
+      return Channel.findOne({ 'category': projectSaved.category })
+    })
+    .then(channel => {
+      if(!channel){
+        const newChannel = new Channel({
+          category: 'ART'
+        })
+        return newChannel.save()
+      } else {
+        return channel
       }
-      else {
-        console.log("Project saved");
-        Channel.findOne({ 'category': saved.category }, function (err, channel) {
-          if(err) {
-            console.log("Error", err);
-          }
-          else {
-            if(!channel.projects) {
-              channel.projects = [];
-            }
-            channel.projects.push(saved);
-            channel.save(function(err, saved) {
-              if(err) {
-                console.log("Error", err);
-              }
-              else {
-                console.log("Channel saved");
-                User.findOne({ 'username': req.user.username}, function(err, user) {
-                  if(err) {
-                    console.log("Error", err);
-                  }
-                  else {
-                    if(user) {
-                      if(!user.projects) {
-                        user.projects = [];
-                      }
-                      user.projects.push(saved);
-                      user.save(function(err, saved) {
-                        if(err) {
-                          console.log("Error", err);
-                        }
-                        else {
-                          console.log("User saved");
-                          res.json({
-                            success: true
-                          });
-                        }
-                      });
-                    }
-                  }
-                });
-              }
-            });
-          }
-        });
+    })
+    .then(channel => {
+      if(!channel.projects) {
+        channel.projects = [];
       }
-    });
+      channel.projects.push(globalProjectSaved);
+      return channel.save()
+    })
+    .then(channelSaved => {
+      console.log("Channel saved");
+      const user = req.user
+      // if(!user.projects) {
+      //   user.projects = [];
+      // }
+      user.projects.push(globalProjectSaved);
+      return user.save()
+    })
+    .then(userSaved => {
+      console.log("User saved");
+      res.json({
+        success: true
+      });
+    })
+    .catch((err) => {
+      console.log("Error", err);
+    })
   });
 
   router.get('/channel/list', function(req, res) {
@@ -358,77 +421,6 @@ module.exports = function (passport) {
           }
         });
       }
-    });
-  });
-
-
-  router.get('/fb/login', passport.authenticate('facebook'));
-
-  router.get('/fb/login/callback', passport.authenticate('facebook', {
-    successRedirect: '/login/success',
-    failureRedirect: '/login/failure'
-  }));
-
-  router.get('/login/failure', function(req, res) {
-    res.status(401).json({
-      success: false,
-      error: req.flash('error')[0]
-    });
-  });
-
-  router.post('/login', passport.authenticate('local', {
-    successRedirect: '/login/success',
-    failureRedirect: '/login/failure',
-    failureFlash: true
-  }));
-
-  router.post('/register', function(req, res, next) {
-    var params = _.pick(req.body, ['username', 'password']);
-    bcrypt.genSalt(10, function(err, salt) {
-      bcrypt.hash(params.password, salt, function(err, hash) {
-        // Store hash in your password DB.
-        params.password = hash;
-        models.User.create(params, function(err, user) {
-          if (err) {
-            res.status(400).json({
-              success: false,
-              error: err.message
-            });
-          } else {
-            res.json({
-              success: true,
-              user: user
-            });
-          }
-        });
-      });
-    });
-  });
-
-  // Beyond this point the user must be logged in
-  router.use(function(req, res, next) {
-    if (!req.isAuthenticated()) {
-      res.status(401).json({
-        success: false,
-        error: 'not authenticated'
-      });
-    } else {
-      next();
-    }
-  });
-  router.get('/logout', function(req, res) {
-    req.logout();
-    res.json({
-      success: true,
-      message: 'logged out.'
-    });
-  });
-
-  router.get('/login/success', function(req, res) {
-    var user = _.pick(req.user, 'username', '_id');
-    res.json({
-      success: true,
-      user: user
     });
   });
 
