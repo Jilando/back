@@ -192,7 +192,7 @@ module.exports = function (passport) {
       description: req.body.description || 'Description',
       startDate: req.body.startDate || 'startDate',
       endDate: req.body.endDate || 'endDate',
-      category: req.body.category || 'category',
+      category: req.body.category || 'ART',
       location: req.body.location || 'location',
     });
     project.save(function(err, saved) {
@@ -200,7 +200,8 @@ module.exports = function (passport) {
         console.log("Error", err);
       }
       else {
-        Channel.findOne({ 'category': req.body.name }, function (err, channel) {
+        console.log("Project saved");
+        Channel.findOne({ 'category': saved.category }, function (err, channel) {
           if(err) {
             console.log("Error", err);
           }
@@ -209,24 +210,40 @@ module.exports = function (passport) {
               channel.projects = [];
             }
             channel.projects.push(saved);
-            User.findOne({ 'username': req.user.username}, function(err, user) {
+            channel.save(function(err, saved) {
               if(err) {
                 console.log("Error", err);
               }
               else {
-                if(user) {
-                  if(!user.projects) {
-                    user.projects = [];
+                console.log("Channel saved");
+                User.findOne({ 'username': req.user.username}, function(err, user) {
+                  if(err) {
+                    console.log("Error", err);
                   }
-                  user.projects.push(project);
-                  res.json({
-                    success: true
-                  })
-                }
+                  else {
+                    if(user) {
+                      if(!user.projects) {
+                        user.projects = [];
+                      }
+                      user.projects.push(saved);
+                      user.save(function(err, saved) {
+                        if(err) {
+                          console.log("Error", err);
+                        }
+                        else {
+                          console.log("User saved");
+                          res.json({
+                            success: true
+                          });
+                        }
+                      });
+                    }
+                  }
+                });
               }
             });
           }
-        })
+        });
       }
     });
   });
