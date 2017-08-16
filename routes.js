@@ -99,10 +99,52 @@ module.exports = function (passport) {
 
   router.get('/login/success', function(req, res) {
     var user = _.pick(req.user, 'username', '_id');
-    res.json({
-      success: true,
-      user: user
+
+    var arr = [{category: 'SPORTS', followers: [], projects: [], imageUrl: 11},
+               {category: 'MOVIES', followers: [], projects: [], imageUrl: 5},
+               {category: 'FASHION', followers: [], projects: [], imageUrl: 9},
+               {category: 'SCIENCE', followers: [], projects: [], imageUrl: 2},
+               {category: 'AUTO', followers: [], projects: [], imageUrl: 8},
+               {category: 'TECHNOLOGY', followers: [], projects: [], imageUrl: 7},
+               {category: 'FINANCES', followers: [], projects: [], imageUrl: 6},
+               {category: 'ART', followers: [], projects: [], imageUrl: 12},
+               {category: 'ANIMATION', followers: [], projects: [], imageUrl: 10},
+               {category: 'EDUCATION', followers: [], projects: [], imageUrl: 13},
+               {category: 'ENVIRONMENT', followers: [], projects: [], imageUrl: 3},
+               {category: 'WORLD', followers: [], projects: [], imageUrl: 4}
+              ];
+
+    Channel.find({}, function(err, channels1) {
+      console.log(channels1);
+      if(channels1.length === 12) {
+        res.json({
+          success: true,
+          user: user
+        });
+      }
+      else {
+        Channel.insertMany(arr, function(err, channels2) {
+          if(err) {
+            res.json({
+              success: true,
+              user: user
+            });
+            console.log("Error", err);
+          }
+          else {
+            res.json({
+              success: true,
+              user: user
+            });
+          }
+        });
+      }
     });
+
+    // res.json({
+    //   success: true,
+    //   user: user
+    // });
   });
 
   router.get('/events', function(req, res) {
@@ -156,7 +198,7 @@ module.exports = function (passport) {
   });
 
   router.get('project/:name', function(req, res) {
-    Project.findById(req.query.id, function(err, project) {
+    Project.findBy({'username': req.query.name}, function(err, project) {
       if (err) {
         console.log("Error", err);
       }
@@ -166,11 +208,10 @@ module.exports = function (passport) {
             console.log("Error", err);
           }
           else {
-            if(!user.visited) {
-              user.visited = [];
-            }
             user.visited.push(project);
-            res.send(project);
+            res.json({
+              project: project
+            });
           }
         });
 
@@ -259,6 +300,7 @@ module.exports = function (passport) {
   router.post('/project/new', function(req, res) {
     console.log('hit');
     var globalProjectSaved = {};
+    var globalChannelSaved = {};
     var project = new Project({
       owner: req.user,
       name: req.body.name || 'Name',
@@ -278,11 +320,20 @@ module.exports = function (passport) {
       if(!channel){
         const newChannel = new Channel({
           category: 'ART'
-        })
+        });
+        console.log("Shouldn't hit");
         return newChannel.save()
       } else {
-        return channel
+        console.log("Should hit");
+        globalProjectSaved.channel = channel;
+        globalChannelSaved = channel;
+        console.log("Should hit", globalProjectSaved);
+        // return channel
+        return globalProjectSaved.save();
       }
+    })
+    .then(projectSaved2 => {
+      return globalChannelSaved
     })
     .then(channel => {
       if(!channel.projects) {

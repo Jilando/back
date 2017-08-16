@@ -26,9 +26,7 @@ var userSchema = mongoose.Schema({
   contributions: {
     type: Object,
   },
-  viewed: {
-    type: Object,
-  }
+  viewed: []
 });
 
 var projectSchema = mongoose.Schema({
@@ -59,6 +57,10 @@ var projectSchema = mongoose.Schema({
   },
   category: {
     type: String,
+  },
+  channel: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Channel',
   },
   location: {
     type: String,
