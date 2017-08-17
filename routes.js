@@ -198,25 +198,26 @@ module.exports = function (passport) {
   });
 
   router.get('project/:name', function(req, res) {
-    Project.findBy({'username': req.query.name}, function(err, project) {
-      if (err) {
-        console.log("Error", err);
-      }
-      else {
-        User.findOne({ 'username': req.user.username}, function(err, user) {
-          if (err) {
-            console.log("Error", err);
-          }
-          else {
-            user.visited.push(project);
-            res.json({
-              project: project
-            });
-          }
-        });
+    // Project.findBy({'username': req.query.name}, function(err, project) {
+    //   if (err) {
+    //     console.log("Error", err);
+    //   }
+    //   else {
+    //     User.findOne({ 'username': req.user.username}, function(err, user) {
+    //       if (err) {
+    //         console.log("Error", err);
+    //       }
+    //       else {
+    //         user.visited.push(project);
+    //         res.json({
+    //           project: project
+    //         });
+    //       }
+    //     });
+    //
+    //   }
+    // })
 
-      }
-    })
   });
 
   router.post('project/:projectname/projectImage/upload', upload.single('image'), function (req, res, next) {
@@ -291,7 +292,7 @@ module.exports = function (passport) {
           console.log("In projects route", user.projects);
           res.json({
             projects: user.projects || []
-          })
+          });
         }
       }
     });
@@ -304,10 +305,10 @@ module.exports = function (passport) {
     var project = new Project({
       owner: req.user,
       name: req.body.name || 'Name',
-      description: req.body.description || 'Description',
+      description: req.body.description,
       startDate: req.body.startDate || 'startDate',
       endDate: req.body.endDate || 'endDate',
-      category: req.body.category || 'ART',
+      category: req.body.category || 'SPORTS',
       location: req.body.location || 'location',
     })
     project.save()
@@ -325,7 +326,11 @@ module.exports = function (passport) {
         return newChannel.save()
       } else {
         console.log("Should hit");
-        globalProjectSaved.channel = channel;
+        // globalProjectSaved.channel = channel;
+        globalProjectSaved.channel = {
+          category: channel.category,
+          imageUrl: channel.imageUrl
+        }
         globalChannelSaved = channel;
         console.log("Should hit", globalProjectSaved);
         // return channel

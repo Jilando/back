@@ -58,10 +58,11 @@ var projectSchema = mongoose.Schema({
   category: {
     type: String,
   },
-  channel: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Channel',
-  },
+  // channel: {
+  //   type: mongoose.Schema.Types.ObjectId,
+  //   ref: 'Channel',
+  // },
+  channel: {},
   location: {
     type: String,
   },
