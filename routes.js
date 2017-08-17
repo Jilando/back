@@ -291,7 +291,8 @@ module.exports = function (passport) {
         if(user) {
           console.log("In projects route", user.projects);
           res.json({
-            projects: user.projects || []
+            projects: user.projects || [],
+            user: req.user
           });
         }
       }
