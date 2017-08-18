@@ -247,39 +247,93 @@ module.exports = function (passport) {
     });
   });
 
-  router.post('/project/:projectname/add_contributor', function(req, res) {
-    var username = req.body.username;
-    User.findOne({ 'username': username }, function (err, user) {
-      if (err) {
+
+  router.post('/add_contributor', function(req, res) {
+    var project = req.body.project;
+    var contributor = req.body.contributor;
+    User.findOne({ 'username': contributor}, function(err, user){
+      if(err) {
         console.log("Error", err);
       }
       else {
-        if(!user.contributions) {
-          user.contributions = [];
-        }
-        Project.findOne({ 'name': req.params.projectname }, function (err, project) {
-          if (err) {
+        user.contributions.push(project);
+        user.save(function(err, savedUser){
+          if(err) {
             console.log("Error", err);
           }
           else {
-            if(!project.contributors) {
-              project.contributors = [];
-            }
-            project.contributors.push(user);
-            user.contributions.push(project);
-            user.save(function(err) {
+            // if(!project.contributors){
+            //   project.contributors = [];
+            // }
+            // project.contributors.push(savedUser);
+            // project.save(function(err, savedProject){
+            //   res.json({
+            //     success: true
+            //   });
+            // });
+            Project.findOne({ '_id': project._id}, function(err, found){
               if(err) {
                 console.log("Error", err);
               }
               else {
-                project.save();
+                if(!found.contributors){
+                  found.contributors = [];
+                }
+                found.contributors.push(savedUser);
+                found.save(function(err, savedProject){
+                  res.json({
+                    success: true,
+                    project2: found
+                  });
+                });
               }
-            });
+            })
           }
-        });
+        })
       }
     });
   });
+
+  router.post('/contributors', function(req, res){
+    res.json({
+      success: true,
+      contributors: req.body.project.contributors || []
+    })
+  });
+
+  // router.post('/project/:projectname/add_contributor', function(req, res) {
+  //   var username = req.body.username;
+  //   User.findOne({ 'username': username }, function (err, user) {
+  //     if (err) {
+  //       console.log("Error", err);
+  //     }
+  //     else {
+  //       if(!user.contributions) {
+  //         user.contributions = [];
+  //       }
+  //       Project.findOne({ 'name': req.params.projectname }, function (err, project) {
+  //         if (err) {
+  //           console.log("Error", err);
+  //         }
+  //         else {
+  //           if(!project.contributors) {
+  //             project.contributors = [];
+  //           }
+  //           project.contributors.push(user);
+  //           user.contributions.push(project);
+  //           user.save(function(err) {
+  //             if(err) {
+  //               console.log("Error", err);
+  //             }
+  //             else {
+  //               project.save();
+  //             }
+  //           });
+  //         }
+  //       });
+  //     }
+  //   });
+  // });
 
   router.get('/projects', function(req, res) {
     console.log("Projects route", req.user);
@@ -311,6 +365,7 @@ module.exports = function (passport) {
       endDate: req.body.endDate || 'endDate',
       category: req.body.category || 'SPORTS',
       location: req.body.location || 'location',
+      contributors: []
     })
     project.save()
     .then(projectSaved => {

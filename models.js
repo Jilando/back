@@ -23,9 +23,10 @@ var userSchema = mongoose.Schema({
   socailMediaHandles: {
     type: Object,
   },
-  contributions: {
-    type: Object,
-  },
+  // contributions: {
+  //   type: Object,
+  // },
+  contributions: [],
   viewed: []
 });
 
@@ -46,9 +47,10 @@ var projectSchema = mongoose.Schema({
   imageUrl: {
     type: String,
   },
-  contributors: {
-    type: Object,
-  },
+  // contributors: {
+  //   type: Object,
+  // },
+  contributors: [],
   startDate: {
     type: String,
   },
